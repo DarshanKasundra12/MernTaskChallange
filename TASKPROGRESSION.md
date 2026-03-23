@@ -15,7 +15,7 @@ This file tracks my daily progress for becoming a job-ready MERN backend develop
 ## 🟢 Week 1: Backend Foundation
 
 ### ✅ Day 1 – Server Setup
-**Status:** ⬜ Pending  
+**Status:** ⬜ Completed 
 **Backend Task:**
 - Setup Express server
 - Connect MongoDB
