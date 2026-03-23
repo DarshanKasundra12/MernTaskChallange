@@ -1,0 +1,93 @@
+# ======================
+
+# Node.js / Backend
+
+# ======================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+
+.env
+.env.*
+!.env.example
+
+# Logs
+
+logs/
+*.log
+
+# Runtime data
+
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# ======================
+
+# React / Frontend
+
+# ======================
+
+node_modules/
+build/
+dist/
+.cache/
+coverage/
+
+# Vite
+
+.vite/
+
+# Next.js (if used later)
+
+.next/
+out/
+
+# ======================
+
+# MongoDB / Database
+
+# ======================
+
+*.db
+*.sqlite
+
+# ======================
+
+# IDE / Editor
+
+# ======================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ======================
+
+# Misc
+
+# ======================
+
+*.zip
+*.tar
+*.gz
+
+# ======================
+
+# Uploads (if using multer)
+
+# ======================
+
+uploads/
