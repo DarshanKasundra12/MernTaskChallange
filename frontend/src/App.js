@@ -1,108 +1,137 @@
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Dashboard from './pages/Dashboard';
+import Week1Page from './pages/Week1Page';
+import CustomCursor from './components/CustomCursor';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import './App.css';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
-function computeShowTester() {
-  if (typeof window === 'undefined') return false;
-  return new URLSearchParams(window.location.search).get('testing') === '1';
-}
+const blobs = [
+  { top: '-120px', left: '-90px', size: 320, duration: 14, delay: 0 },
+  { top: '18%', left: '72%', size: 260, duration: 17, delay: 1.5 },
+  { top: '64%', left: '10%', size: 280, duration: 19, delay: 2.5 },
+  { top: '76%', left: '78%', size: 240, duration: 16, delay: 0.8 },
+];
 
-function getTestingUrl() {
-  // Backend route is GET /testing (not under /api). If REACT_APP_API_URL points
-  // to ".../api", strip it so this works in both local and deployed setups.
-  const apiUrl = process.env.REACT_APP_API_URL;
-  if (!apiUrl) return '/testing';
+const beams = [
+  { left: '12%', duration: 18, delay: 0.4 },
+  { left: '44%', duration: 21, delay: 1.3 },
+  { left: '76%', duration: 19, delay: 2.1 },
+];
 
-  try {
-    const u = new URL(apiUrl);
-    u.pathname = u.pathname.replace(/\/api\/?$/, '/');
-    return new URL('/testing', u).toString();
-  } catch {
-    return '/testing';
-  }
+function getViewFromHash(hash) {
+  return hash === '#week1-page' ? 'week1' : 'dashboard';
 }
 
 function App() {
-  const showTester = useMemo(computeShowTester, []);
+  const [view, setView] = useState(() =>
+    typeof window === 'undefined' ? 'dashboard' : getViewFromHash(window.location.hash)
+  );
 
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [output, setOutput] = useState('');
-  const [error, setError] = useState('');
-
-  const runTest = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    setStatus(null);
-    setOutput('');
-
-    try {
-      // Per request: GET /testing
-      const url = getTestingUrl();
-      const res = await fetch(url, { method: 'GET' });
-      setStatus(res.status);
-
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const json = await res.json();
-        const pretty = JSON.stringify(json, null, 2);
-        setOutput(pretty);
-        console.log('GET /testing ->', url, res.status, json);
-      } else {
-        const text = await res.text();
-        setOutput(text);
-        console.log('GET /testing ->', url, res.status, text);
-      }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setError(message);
-      console.error('GET /testing failed:', e);
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    const onHashChange = () => setView(getViewFromHash(window.location.hash));
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   useEffect(() => {
-    if (showTester) runTest();
-  }, [showTester, runTest]);
+    if (view === 'week1') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
-  if (!showTester) {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <h2>App Running</h2>
-          <p>
-            To run the connectivity check, open this page with{' '}
-            <code>?testing=1</code> (it will call <code>GET /testing</code> and
-            show the output).
-          </p>
-        </header>
-      </div>
-    );
-  }
+    const id = window.location.hash.replace('#', '');
+    if (!id || id === 'dashboard') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [view]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h2>Frontend &lt;-&gt; Backend Test</h2>
-        <p>
-          This page calls <code>GET /testing</code> and shows the response below.
-        </p>
+    <div className="site">
+      <CustomCursor />
+      <motion.div
+        className="site__layer site__layer--glow"
+        animate={{ opacity: [0.65, 1, 0.7, 0.9, 0.65] }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="site__layer site__layer--grid"
+        animate={{ backgroundPosition: ['0px 0px', '60px 35px', '0px 0px'] }}
+        transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+      />
 
-        <button onClick={runTest} disabled={loading}>
-          {loading ? 'Testing...' : 'Re-test'}
-        </button>
+      <div className="site__bg-content">
+        {blobs.map((blob) => (
+          <motion.div
+            key={`${blob.top}-${blob.left}`}
+            className="site__blob"
+            style={{
+              top: blob.top,
+              left: blob.left,
+              width: blob.size,
+              height: blob.size,
+            }}
+            animate={{
+              x: [0, 18, -16, 0],
+              y: [0, -22, 14, 0],
+              scale: [1, 1.12, 0.96, 1],
+              opacity: [0.16, 0.28, 0.12, 0.16],
+            }}
+            transition={{
+              duration: blob.duration,
+              delay: blob.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
 
-        <div style={{ width: 'min(900px, 92vw)', marginTop: 16, textAlign: 'left' }}>
-          <div>
-            <strong>Status:</strong> {status === null ? 'n/a' : status}
+        {beams.map((beam) => (
+          <motion.div
+            key={beam.left}
+            className="site__beam"
+            style={{ left: beam.left }}
+            animate={{ y: ['-30%', '120%'], opacity: [0, 0.35, 0] }}
+            transition={{
+              duration: beam.duration,
+              delay: beam.delay,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+        ))}
+      </div>
+
+      <motion.div
+        className="site__ring site__ring--left"
+        animate={{ rotate: 360, scale: [1, 1.06, 1] }}
+        transition={{ rotate: { duration: 24, repeat: Infinity, ease: 'linear' }, scale: { duration: 8, repeat: Infinity } }}
+      />
+      <motion.div
+        className="site__ring site__ring--right"
+        animate={{ rotate: -360 }}
+        transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+      />
+      <div className="site__content">
+        <Navbar />
+        {view === 'week1' ? (
+          <Week1Page />
+        ) : (
+          <div id="dashboard">
+            <Dashboard />
           </div>
-          {error ? (
-            <pre style={{ whiteSpace: 'pre-wrap', color: '#ffb3b3' }}>{error}</pre>
-          ) : (
-            <pre style={{ whiteSpace: 'pre-wrap' }}>{output || '(no body)'}</pre>
-          )}
-        </div>
-      </header>
+        )}
+        <Footer />
+      </div>
     </div>
   );
 }

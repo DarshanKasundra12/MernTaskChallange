@@ -1,17 +1,55 @@
 import Task from "../models/taskSchema.js";
 import {json, request} from "express";
 import mongoose from "mongoose";
+import fs from "fs/promises";
+import path from "path";
+import { randomUUID } from "crypto";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, "../uploads/proofs");
+
+function getImageExtension(mimeType) {
+    const lookup = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/webp": "webp",
+        "image/gif": "gif"
+    };
+
+    return lookup[mimeType] || "png";
+}
+
+async function saveProofImage(imageData) {
+    const match = imageData.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!match) return "";
+
+    const mimeType = match[1];
+    const base64 = match[2];
+    const extension = getImageExtension(mimeType);
+    const filename = `${Date.now()}-${randomUUID()}.${extension}`;
+
+    await fs.mkdir(uploadsDir, { recursive: true });
+    await fs.writeFile(path.join(uploadsDir, filename), Buffer.from(base64, "base64"));
+
+    return `/uploads/proofs/${filename}`;
+}
 
 export const addTask = async (req,res) => {
     try{
-        const {day , week ,title, description, difficulty, status } = req.body;
+        const {day , week ,title, description, proof, proofImage, proofImageData, difficulty, status } = req.body;
         console.log(Task);
         console.log(req.body);
+        const storedProofImage = proofImageData ? await saveProofImage(proofImageData) : (proofImage || "");
         const newTask = await Task.create({
             day,
             week,
             title,
             description,
+            proof,
+            proofImage: storedProofImage,
             difficulty,
             status
         });
@@ -84,7 +122,7 @@ export const getTaskById = async (req,res) => {
 export const updateTask = async (req,res) => {
     try{
         const {id} = req.params;
-        const {day , week ,title, description, difficulty, status} = req.body;
+        const {day , week ,title, description, proof, proofImage, proofImageData, difficulty, status} = req.body;
 
         if(!mongoose.Types.ObjectId.isValid(id)){
             return res.status(400).json({
@@ -93,11 +131,18 @@ export const updateTask = async (req,res) => {
             })
         }
 
+        let storedProofImage = proofImage || "";
+        if (proofImageData) {
+            storedProofImage = await saveProofImage(proofImageData);
+        }
+
         const updatetask = await Task.findByIdAndUpdate(id,{
             day,
             week,
             title,
             description,
+            proof,
+            proofImage: storedProofImage,
             difficulty,
             status
         },{new: true, runValidators: true});
