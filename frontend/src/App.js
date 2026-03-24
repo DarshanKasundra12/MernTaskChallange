@@ -2,10 +2,29 @@ import './App.css';
 import { useEffect, useState } from 'react';
 
 function App() {
+  const showTester =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('testing') === '1';
+
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
+
+  function getTestingUrl() {
+    // Backend route is GET /testing (not under /api). If REACT_APP_API_URL points
+    // to ".../api", strip it so this works in both local and deployed setups.
+    const apiUrl = process.env.REACT_APP_API_URL;
+    if (!apiUrl) return '/testing';
+
+    try {
+      const u = new URL(apiUrl);
+      u.pathname = u.pathname.replace(/\/api\/?$/, '/');
+      return new URL('/testing', u).toString();
+    } catch {
+      return '/testing';
+    }
+  }
 
   async function runTest() {
     setLoading(true);
@@ -15,7 +34,8 @@ function App() {
 
     try {
       // Per request: GET /testing
-      const res = await fetch('/testing', { method: 'GET' });
+      const url = getTestingUrl();
+      const res = await fetch(url, { method: 'GET' });
       setStatus(res.status);
 
       const contentType = res.headers.get('content-type') || '';
@@ -23,11 +43,11 @@ function App() {
         const json = await res.json();
         const pretty = JSON.stringify(json, null, 2);
         setOutput(pretty);
-        console.log('GET /testing ->', res.status, json);
+        console.log('GET /testing ->', url, res.status, json);
       } else {
         const text = await res.text();
         setOutput(text);
-        console.log('GET /testing ->', res.status, text);
+        console.log('GET /testing ->', url, res.status, text);
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
@@ -39,8 +59,23 @@ function App() {
   }
 
   useEffect(() => {
-    runTest();
+    if (showTester) runTest();
   }, []);
+
+  if (!showTester) {
+    return (
+      <div className="App">
+        <header className="App-header">
+          <h2>App Running</h2>
+          <p>
+            To run the connectivity check, open this page with{' '}
+            <code>?testing=1</code> (it will call <code>GET /testing</code> and
+            show the output).
+          </p>
+        </header>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
