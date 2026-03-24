@@ -1,32 +1,35 @@
 import './App.css';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+function computeShowTester() {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('testing') === '1';
+}
+
+function getTestingUrl() {
+  // Backend route is GET /testing (not under /api). If REACT_APP_API_URL points
+  // to ".../api", strip it so this works in both local and deployed setups.
+  const apiUrl = process.env.REACT_APP_API_URL;
+  if (!apiUrl) return '/testing';
+
+  try {
+    const u = new URL(apiUrl);
+    u.pathname = u.pathname.replace(/\/api\/?$/, '/');
+    return new URL('/testing', u).toString();
+  } catch {
+    return '/testing';
+  }
+}
 
 function App() {
-  const showTester =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('testing') === '1';
+  const showTester = useMemo(computeShowTester, []);
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
 
-  function getTestingUrl() {
-    // Backend route is GET /testing (not under /api). If REACT_APP_API_URL points
-    // to ".../api", strip it so this works in both local and deployed setups.
-    const apiUrl = process.env.REACT_APP_API_URL;
-    if (!apiUrl) return '/testing';
-
-    try {
-      const u = new URL(apiUrl);
-      u.pathname = u.pathname.replace(/\/api\/?$/, '/');
-      return new URL('/testing', u).toString();
-    } catch {
-      return '/testing';
-    }
-  }
-
-  async function runTest() {
+  const runTest = useCallback(async () => {
     setLoading(true);
     setError('');
     setStatus(null);
@@ -56,11 +59,11 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     if (showTester) runTest();
-  }, []);
+  }, [showTester, runTest]);
 
   if (!showTester) {
     return (
@@ -80,7 +83,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h2>Frontend ↔ Backend Test</h2>
+        <h2>Frontend &lt;-&gt; Backend Test</h2>
         <p>
           This page calls <code>GET /testing</code> and shows the response below.
         </p>
