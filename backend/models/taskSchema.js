@@ -5,6 +5,8 @@ const taskSchema = new Schema({
     week: {type: String, required: true, min: 1, max: 4},
     title: {type: String, required: true},
     description: {type: String},
+    proof: {type: String, default: ""},
+    proofImage: {type: String, default: ""},
     difficulty: {type: String, enum: ['Easy', 'Hard', 'Medium'], default: 'Easy'},
     status: {type: String, enum: ['Created', 'Ongoing', 'Completed'], default: 'Created'},
 

@@ -3,44 +3,51 @@ import  databaseConnect  from "./utils/dbConnect.js";
 databaseConnect();
 import dotenv from "dotenv";
 dotenv.config();
+import cors from "cors";
 import Task from "./routes/taskRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Minimal CORS for browser-based frontends (Vercel, etc.).
-// Configure in your backend environment as:
-// CORS_ORIGINS=https://mern-task-challange.vercel.app,https://your-custom-domain.com
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const raw = process.env.CORS_ORIGINS || "";
-    const allowList = raw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+// CORS configuration
+const raw = process.env.CORS_ORIGINS || "";
+const envAllowList = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-    if (allowList.length === 0) {
-        // Default: allow any origin (good for quick testing). Tighten in production via CORS_ORIGINS.
-        res.setHeader("Access-Control-Allow-Origin", "*");
-    } else if (origin && allowList.includes(origin)) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Vary", "Origin");
-    }
+// Always allow common local frontend origins for development/testing.
+const defaultAllowList = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://mern-task-challange.vercel.app"
+];
 
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+const allowList = new Set([...defaultAllowList, ...envAllowList]);
 
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(204);
-    }
-
-    next();
-});
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowList.has(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 
 app.get("/testing", (req, res) => {
     res.send("Testing route is working")
 });
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/task", Task);
 
 const PORT = process.env.PORT || 5000;
