@@ -1,8 +1,7 @@
 import express from "express";
-import  databaseConnect  from "./utils/dbConnect.js";
-databaseConnect();
 import dotenv from "dotenv";
 dotenv.config();
+import  databaseConnect  from "./utils/dbConnect.js";
 import cors from "cors";
 import Task from "./routes/taskRoutes.js";
 import path from "path";
@@ -51,4 +50,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/task", Task);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {console.log("Server is Running at http://localhost:" + PORT)});
+
+async function startServer() {
+    try {
+        await databaseConnect();
+        app.listen(PORT, () => {
+            console.log("Server is Running at http://localhost:" + PORT);
+        });
+    } catch (error) {
+        console.error("Startup failed:", error?.message || error);
+        process.exit(1);
+    }
+}
+
+startServer();
