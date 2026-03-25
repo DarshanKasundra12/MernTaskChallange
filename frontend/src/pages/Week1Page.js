@@ -5,7 +5,7 @@ import BASE_URL from '../api';
 const crudOps = [
   { name: 'Create', api: '/tasks POST', note: 'Add new task' },
   { name: 'Read', api: '/tasks GET', note: 'Fetch all tasks' },
-  { name: 'Update', api: '/tasks/:id PUT', note: 'Edit existing task' },
+  { name: 'Update', api: '/tasks/:id PATCH', note: 'Edit existing task' },
   { name: 'Delete', api: '/tasks/:id DELETE', note: 'Remove task' },
 ];
 
